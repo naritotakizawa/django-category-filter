@@ -1,0 +1,104 @@
+{% extends 'app/base.html' %}
+{% block content %}
+    <form action="" method="POST">
+        {{ form.as_p }}
+        {% csrf_token %}
+        <button type="submit">送信</button>
+    </form>
+{% endblock %}
+
+{% block extrajs %}
+    <script>
+        const parentCategoryElement = document.getElementById('id_parent_category');
+        const categoryElement = document.getElementById('id_category');
+
+        const changeCategory = (select) => {
+            // 子カテゴリの選択欄を空にする。
+            categoryElement.innerHTML = '';
+
+            const pk = parentCategoryElement[parentCategoryElement.selectedIndex].value;
+            const url = `{% url 'app2:ajax_get_category' %}?pk=${pk}`;
+
+            fetch(url)
+                .then(response => {
+                    return response.json();
+                })
+                .then(response => {
+                    for (const category of response.categoryList) {
+                        const option = document.createElement('option');
+                        option.value = category.pk;
+                        option.innerHTML = category.name;
+                        categoryElement.add(option);
+                    }
+
+                    if (select !== undefined) {
+                        for (let i = 0, len = categoryElement.length; i < len; i++) {
+                            const option = categoryElement[i];
+                            if (option.value === select) {
+                                option.selected = true;
+                            }
+                        }
+                    }
+
+                })
+                .catch(error => {
+                    console.log(error)
+                });
+        };
+
+        parentCategoryElement.addEventListener('change', () => {
+            changeCategory();
+        });
+
+        // 入力値に問題があって再表示された場合、ページ表示時点で小カテゴリが絞り込まれるようにする
+        if (parentCategoryElement[parentCategoryElement.selectedIndex].value) {
+            const selectedCategory = categoryElement[categoryElement.selectedIndex].value;
+            changeCategory(selectedCategory);
+        }
+
+
+        /*
+            // jQueryでやる例
+            const parentCategoryElement = $('#id_parent_category');
+            const categoryElement = $('#id_category');
+
+            const changeCategory = (select) => {
+                // 子カテゴリの選択欄を空にする。
+                categoryElement.children().remove();
+
+                $.ajax({
+                    url: '{% url 'app2:ajax_get_category' %}',
+                    type: 'GET',
+                    data: {
+                        'pk': parentCategoryElement.val(),
+                    }
+                }).done(response => {
+                    // 子カテゴリの選択肢を作成・追加。
+                    for (const category of response.categoryList) {
+                        const option = $('<option>');
+                        option.val(category['pk']);
+                        option.text(category['name']);
+                        categoryElement.append(option);
+                    }
+
+                    // 指定があれば、そのカテゴリを選択する
+                    if (select !== undefined) {
+                        categoryElement.val(select);
+                    }
+
+                });
+            };
+
+            parentCategoryElement.on('change', () => {
+                changeCategory();
+            });
+
+            // 入力値に問題があって再表示された場合、ページ表示時点で小カテゴリが絞り込まれるようにする
+            if (parentCategoryElement.val()) {
+                const selectedCategory = categoryElement.val();
+                changeCategory(selectedCategory);
+            }
+         */
+    </script>
+{% endblock %}
+

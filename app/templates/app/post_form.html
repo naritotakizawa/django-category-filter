@@ -1,0 +1,64 @@
+{% extends 'app/base.html' %}
+{% block content %}
+    <form action="" method="POST">
+        {{ form.as_p }}
+        {% csrf_token %}
+        <button type="submit">送信</button>
+    </form>
+{% endblock %}
+
+{% block extrajs %}
+    <script>
+        const parentCategoryElement = $('#id_parent_category');
+        const categoryElement = $('#id_category');
+        const categories = {
+            {% for parent in parentcategory_list %}
+                '{{ parent.pk }}': [
+                    {% for category in parent.category_set.all %}
+                        {
+                            'pk': '{{ category.pk }}',
+                            'name': '{{ category.name }}'
+                        },
+                    {% endfor %}
+                ],
+            {% endfor %}
+        };
+
+
+        const changeCategory = (select) => {
+            // 子カテゴリの選択欄を空にする。
+            categoryElement.children().remove();
+
+            // 選択した親カテゴリに紐づく子カテゴリの一覧を取得する。
+            const parentId = parentCategoryElement.val();
+            const categoryList = categories[parentId];
+
+            // 子カテゴリの選択肢を作成・追加。
+            for (const category of categoryList) {
+                const option = $('<option>');
+                option.val(category['pk']);
+                option.text(category['name']);
+                categoryElement.append(option);
+            }
+
+            // 指定があれば、そのカテゴリを選択する
+            if (select !== undefined) {
+                categoryElement.val(select);
+            }
+        };
+
+
+        $('#id_parent_category').on('change', () => {
+            changeCategory();
+        });
+
+
+        // 入力値に問題があって再表示された場合、ページ表示時点で小カテゴリが絞り込まれるようにする
+        if (parentCategoryElement.val()) {
+            const selectedCategory = categoryElement.val();
+            changeCategory(selectedCategory);
+        }
+
+    </script>
+{% endblock %}
+
